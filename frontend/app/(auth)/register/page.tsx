@@ -67,10 +67,15 @@ export default function RegisterPage() {
         }),
       });
 
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // Non-JSON response fallback
+      }
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Registration failed');
+        throw new Error((data && data.detail) || 'Registration failed. Please check your input.');
       }
 
       login(data.access_token, data.user);
