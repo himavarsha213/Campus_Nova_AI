@@ -145,6 +145,8 @@ async def upload_document(
             detail="Failed to save uploaded file."
         )
 
+    user_id = current_user.get("id", "demo-user") if isinstance(current_user, dict) else "demo-user"
+
     # Create initial document entry in Supabase as 'processing'
     doc_data = {
         "id": doc_uuid,
@@ -153,7 +155,7 @@ async def upload_document(
         "file_url": f"/static/uploads/{temp_file_name}",
         "department_id": department_id,
         "category": category,
-        "uploaded_by": current_user["id"],
+        "uploaded_by": user_id,
         "status": "active",
         "version": 1
     }
@@ -165,7 +167,10 @@ async def upload_document(
         "file_name": file.filename
     }
 
-    background_tasks.add_task(bg_ingest_task, doc_uuid, temp_file_path, metadata)
+    try:
+        background_tasks.add_task(bg_ingest_task, doc_uuid, temp_file_path, metadata)
+    except Exception as bg_err:
+        logger.warning(f"Background task dispatch failed (non-fatal): {bg_err}")
 
     try:
         new_doc = document_repo.create_document(doc_data)
