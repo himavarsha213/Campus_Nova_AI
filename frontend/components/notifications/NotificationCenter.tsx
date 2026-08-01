@@ -6,7 +6,7 @@ import { Bell, Check, CheckCheck, Sparkles, FileText, FileQuestion, Calendar, In
 import { useAuth } from '@/lib/auth/AuthContext';
 import GlassButton from '@/components/ui/GlassButton';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { API_BASE_URL as API } from '@/lib/api';
 
 interface NotificationItem {
   id: string;
