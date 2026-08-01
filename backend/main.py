@@ -10,7 +10,6 @@ from app.core.config import settings
 from app.api.v1.auth import router as auth_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.chat import router as chat_router
-from app.api.v1.summarizer import router as summarizer_router
 from app.api.v1.quiz import router as quiz_router
 from app.api.v1.notices import router as notices_router
 from app.api.v1.admin import router as admin_router
@@ -47,7 +46,6 @@ async def add_process_time_header(request: Request, call_next):
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(documents_router, prefix=settings.API_V1_STR)
 app.include_router(chat_router, prefix=settings.API_V1_STR)
-app.include_router(summarizer_router, prefix=settings.API_V1_STR)
 app.include_router(quiz_router, prefix=settings.API_V1_STR)
 app.include_router(notices_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)

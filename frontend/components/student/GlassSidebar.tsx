@@ -30,7 +30,6 @@ export interface NavItem {
 const navItems: NavItem[] = [
   { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
   { name: 'AI Chat', href: '/student/chat', icon: MessageSquareText, badge: 'Live' },
-  { name: 'Summarizer', href: '/student/summarizer', icon: FileText },
   { name: 'Quiz Generator', href: '/student/quiz', icon: FileQuestion },
   { name: 'Document Search', href: '/student/documents', icon: Search },
   { name: 'Department Notices', href: '/student/notices', icon: Bell, badge: '5 New' },
