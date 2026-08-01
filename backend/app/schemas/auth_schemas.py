@@ -13,6 +13,7 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     email: str
     password: str
+    role: Optional[str] = None
 
 class UserOut(BaseModel):
     id: str

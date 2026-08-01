@@ -30,7 +30,7 @@ export default function LoginPage() {
       const response = await fetch(`${API}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role }),
       });
 
       let data: any = null;

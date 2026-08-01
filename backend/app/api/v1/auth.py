@@ -55,17 +55,17 @@ async def register(user_in: UserRegister):
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin):
     email_clean = credentials.email.lower().strip()
+    target_role = credentials.role or ("faculty" if "faculty" in email_clean else ("admin" if "admin" in email_clean else "student"))
     user = user_repo.get_by_email(email_clean)
 
     if not user:
-        # Dynamically create user record for any newly registered / serverless session
-        inferred_role = "faculty" if "faculty" in email_clean else ("admin" if "admin" in email_clean else "student")
+        # Dynamically create user record with target_role
         name_part = email_clean.split("@")[0].replace(".", " ").replace("_", " ").title()
         user_data = {
             "full_name": name_part or "Campus User",
             "email": email_clean,
             "password_hash": get_password_hash(credentials.password),
-            "role": inferred_role,
+            "role": target_role,
             "department_id": "a0000000-0000-0000-0000-000000000001",
             "semester": 1
         }
@@ -77,18 +77,28 @@ async def login(credentials: UserLogin):
                 "created_at": "2026-08-01T00:00:00Z",
                 **user_data
             }
-    elif not verify_password(credentials.password, user.get("password_hash", "")):
-        # If password hash check fails against legacy hash, update password hash
-        try:
-            new_hash = get_password_hash(credentials.password)
-            user_repo.update(str(user["id"]), {"password_hash": new_hash})
-            user["password_hash"] = new_hash
-        except Exception:
-            pass
+    else:
+        # Guarantee user role matches credentials.role if explicitly selected by user
+        if credentials.role and user.get("role") != credentials.role:
+            user["role"] = credentials.role
+            try:
+                user_repo.update(str(user["id"]), {"role": credentials.role})
+            except Exception:
+                pass
+
+        if not verify_password(credentials.password, user.get("password_hash", "")):
+            try:
+                new_hash = get_password_hash(credentials.password)
+                user_repo.update(str(user["id"]), {"password_hash": new_hash})
+                user["password_hash"] = new_hash
+            except Exception:
+                pass
+
+    active_role = credentials.role or user.get("role", "student")
 
     access_token = create_access_token(
         subject=user["id"],
-        role=user.get("role", "student"),
+        role=active_role,
         email=user.get("email", email_clean),
         full_name=user.get("full_name", "Campus User")
     )
