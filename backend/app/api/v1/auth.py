@@ -33,7 +33,12 @@ async def register(user_in: UserRegister):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error during registration: {str(e)}")
 
-    access_token = create_access_token(subject=new_user["id"], role=new_user["role"])
+    access_token = create_access_token(
+        subject=new_user["id"],
+        role=new_user["role"],
+        email=new_user.get("email", ""),
+        full_name=new_user.get("full_name", "")
+    )
     
     user_out = UserOut(
         id=str(new_user["id"]),
@@ -62,7 +67,12 @@ async def login(credentials: UserLogin):
             detail="Invalid email or password"
         )
     
-    access_token = create_access_token(subject=user["id"], role=user["role"])
+    access_token = create_access_token(
+        subject=user["id"],
+        role=user["role"],
+        email=user.get("email", ""),
+        full_name=user.get("full_name", "")
+    )
     
     user_out = UserOut(
         id=str(user["id"]),

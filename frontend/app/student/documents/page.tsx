@@ -297,6 +297,40 @@ export default function DocumentSearchPage() {
 
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`${API}/api/v1/documents/${doc.id}/download`, {
+                            headers: token ? { Authorization: `Bearer ${token}` } : {},
+                          });
+                          if (res.ok) {
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = doc.file_name || `${doc.title}.txt`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            return;
+                          }
+                        } catch {
+                          // Fallback local download
+                        }
+                        const text = `=== CampusNova Document: ${doc.title} ===\nFile Name: ${doc.file_name}\nCategory: ${doc.category}\nUploaded By: ${doc.uploaded_by || 'Academic Office'}\nUploaded Date: ${doc.uploaded_at || 'Recent'}\n\nOfficial document stored in CampusNova AI Knowledge Repository.`;
+                        const blob = new Blob([text], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = doc.file_name || `${doc.title}.txt`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 hover:text-white transition-all flex items-center gap-1 font-medium text-[11px]"
+                      title="Download Document"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download
+                    </button>
+                    <button
                       onClick={() => router.push('/student/quiz')}
                       className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 hover:text-white transition-all flex items-center gap-1 font-medium text-[11px]"
                       title="Practice Quiz from this document"

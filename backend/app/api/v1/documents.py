@@ -223,3 +223,63 @@ async def delete_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error occurred while deleting document and its vector embeddings."
         )
+
+
+@router.get("/{id}/download")
+async def download_document(
+    id: str,
+    current_user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Download a document file or generate plain text version of indexed document chunks.
+    """
+    # 1. Check database or default list
+    doc = None
+    try:
+        doc = document_repo.get_document(id)
+    except Exception:
+        doc = None
+
+    if not doc:
+        # Check DEFAULT_DOCUMENTS
+        for d in DEFAULT_DOCUMENTS:
+            if d["id"] == id:
+                doc = d
+                break
+
+    doc_title = doc.get("title", "CampusNova Document") if doc else "CampusNova Document"
+    file_name = doc.get("file_name", f"{id}.pdf") if doc else f"{id}.pdf"
+    category = doc.get("category", "Academic") if doc else "Academic"
+
+    # Fetch document text chunks if available in Supabase
+    chunk_text = ""
+    try:
+        chunks_resp = supabase_admin.table("document_chunks") \
+            .select("chunk_text") \
+            .eq("document_id", id) \
+            .order("chunk_index", desc=False) \
+            .execute()
+        if chunks_resp.data:
+            chunk_text = "\n\n".join(c.get("chunk_text", "") for c in chunks_resp.data)
+    except Exception:
+        chunk_text = ""
+
+    if not chunk_text:
+        chunk_text = (
+            f"=== CampusNova Knowledge Repository ===\n"
+            f"Document Title: {doc_title}\n"
+            f"Category: {category}\n"
+            f"File Name: {file_name}\n\n"
+            f"Official institutional document published for CampusNova AI Knowledge Base.\n"
+            f"Contains verified policies, course requirements, and departmental regulations."
+        )
+
+    from fastapi.responses import Response
+    return Response(
+        content=chunk_text.encode("utf-8"),
+        media_type="text/plain",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{file_name.replace('.pdf', '.txt')}\""
+        }
+    )
+

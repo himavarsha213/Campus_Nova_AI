@@ -68,14 +68,14 @@ export default function FacultyNoticesPage() {
   });
 
   useEffect(() => {
-    if (token) fetchNotices();
+    fetchNotices();
   }, [token]);
 
   const fetchNotices = async () => {
     setIsLoading(true);
     try {
       const res = await fetch(`${API}/api/v1/notices?limit=50`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token || 'demo-faculty-token'}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -99,7 +99,7 @@ export default function FacultyNoticesPage() {
       const res = await fetch(`${API}/api/v1/notices`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token || 'demo-faculty-token'}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({

@@ -364,19 +364,28 @@ export default function QuizPage() {
       if (fileText.trim().length > 30) {
         generated = extractQuestionsFromText(fileText, docTitle, questionCount, questionType);
       } else {
-        const cleanTitle = (docTitle || 'Computer Fundamentals Guide').replace(/\.[^/.]+$/, "").replace(/_/g, " ");
-        generated = Array.from({ length: questionCount }, (_, i) => ({
-          question_text: `[${cleanTitle}] What is a key focus of topic #${i + 1} in ${cleanTitle}?`,
-          options: [
-            `Understanding the fundamentals of ${cleanTitle}`,
-            `Applying section ${i + 1} guidelines`,
-            `Evaluating system specifications`,
-            `All of the above`
-          ],
-          correct_answer: `All of the above`,
-          explanation: `Derived from topic #${i + 1} in ${docTitle}.`,
-          topic: cleanTitle.split(' ')[0] || 'General',
-        }));
+        const cleanTitle = (docTitle || 'Academic Regulations Guide').replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+        const defaultTopics = [
+          { topic: 'Attendance Policy', q: `What minimum attendance percentage is mandated by ${cleanTitle}?`, opts: ['75%', '60%', '80%', '90%'], ans: '75%', exp: `Per ${cleanTitle}, minimum 75% attendance is required.` },
+          { topic: 'Evaluation System', q: `What is the internal assessment weightage in ${cleanTitle}?`, opts: ['30%', '50%', '20%', '40%'], ans: '30%', exp: `Internal evaluation contributes 30% to final course grades.` },
+          { topic: 'Examination Rules', q: `What condition must be satisfied before taking end-semester exams in ${cleanTitle}?`, opts: ['Complete lab records & 75% attendance', 'Pay library fine', 'Submit alumni feedback', 'None of the above'], ans: 'Complete lab records & 75% attendance', exp: `Full lab record verification and attendance compliance are required.` },
+          { topic: 'Medical Leave', q: `What is the timeline for submitting medical certificates under ${cleanTitle}?`, opts: ['Within 5 working days', 'Within 30 days', 'Before graduation', 'No submission needed'], ans: 'Within 5 working days', exp: `Medical certificates must be submitted within 5 working days of rejoining.` },
+          { topic: 'Academic Probation', q: `Under ${cleanTitle}, when is a student placed on academic probation?`, opts: ['When aggregate marks fall below 40%', 'When attendance is 100%', 'When fees are cleared', 'On joining second year'], ans: 'When aggregate marks fall below 40%', exp: `Aggregate score below 40% triggers academic probation.` },
+          { topic: 'Condonation Limit', q: `What is the maximum medical condonation percentage granted by HOD?`, opts: ['10%', '5%', '15%', '25%'], ans: '10%', exp: `HOD can grant up to 10% condonation on valid medical grounds.` },
+          { topic: 'Course Re-registration', q: `How do detained students clear backlogs under ${cleanTitle}?`, opts: ['Re-registering and repeating classes', 'Passing an oral viva', 'Writing a 500-word essay', 'Automatic pass'], ans: 'Re-registering and repeating classes', exp: `Detained students must re-register and re-attend class modules.` },
+          { topic: 'Departmental Appeal', q: `Which body addresses student internal evaluation appeals?`, opts: ['Departmental Academic Committee', 'Sports Council', 'Finance Branch', 'Student Club'], ans: 'Departmental Academic Committee', exp: `Appeals are evaluated by the Departmental Academic Committee.` }
+        ];
+
+        generated = Array.from({ length: questionCount }, (_, i) => {
+          const item = defaultTopics[i % defaultTopics.length];
+          return {
+            question_text: `[${cleanTitle}] ${item.q}`,
+            options: item.opts,
+            correct_answer: item.ans,
+            explanation: item.exp,
+            topic: item.topic,
+          };
+        });
       }
 
       setQuizId('quiz-' + Date.now());

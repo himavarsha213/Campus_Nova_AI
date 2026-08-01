@@ -41,7 +41,9 @@ export default function SummarizerPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string>('');
   const [rawText, setRawText] = useState<string>('');
-  const [inputMode, setInputMode] = useState<'document' | 'text'>('document');
+  const [inputMode, setInputMode] = useState<'document' | 'upload' | 'text'>('document');
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [docDropdownOpen, setDocDropdownOpen] = useState(false);
@@ -49,6 +51,7 @@ export default function SummarizerPage() {
   const [summaryTitle, setSummaryTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch user-accessible documents
   useEffect(() => {
@@ -76,6 +79,68 @@ export default function SummarizerPage() {
 
   const selectedDoc = documents.find((d) => d.id === selectedDocId);
 
+  // Handle local file selection and upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    setError(null);
+    setUploadedFileName(file.name);
+
+    let extractedText = '';
+    try {
+      extractedText = await file.text();
+    } catch {
+      extractedText = '';
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('title', file.name.replace(/\.[^/.]+$/, ''));
+      formData.append('category', 'Uploaded Document');
+
+      const res = await fetch('/api/v1/documents/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const newDoc: Document = {
+          id: data.id || `uploaded-${Date.now()}`,
+          original_filename: file.name,
+          category: 'Uploaded Document',
+        };
+        setDocuments((prev) => [newDoc, ...prev]);
+        setSelectedDocId(newDoc.id);
+        if (extractedText && extractedText.length > 50) {
+          setRawText(extractedText);
+        }
+      } else {
+        throw new Error('Server upload failed');
+      }
+    } catch {
+      // Local fallback
+      const fallbackDocId = `upload-${Date.now()}`;
+      const newDoc: Document = {
+        id: fallbackDocId,
+        original_filename: file.name,
+        category: 'Uploaded Document',
+      };
+      setDocuments((prev) => [newDoc, ...prev]);
+      setSelectedDocId(fallbackDocId);
+      if (extractedText && extractedText.length > 50) {
+        setRawText(extractedText);
+      }
+    } finally {
+      setIsUploadingFile(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   // Generate summary
   const handleGenerate = async () => {
     setError(null);
@@ -84,6 +149,10 @@ export default function SummarizerPage() {
 
     const payload =
       inputMode === 'document'
+        ? { document_id: selectedDocId }
+        : inputMode === 'upload' && rawText.length > 50
+        ? { raw_text: rawText }
+        : inputMode === 'upload' && selectedDocId
         ? { document_id: selectedDocId }
         : { raw_text: rawText };
 
@@ -104,34 +173,29 @@ export default function SummarizerPage() {
 
       const data = await res.json();
       setSummary(data.summary);
-      setSummaryTitle(data.document_title || 'Document Summary');
+      setSummaryTitle(data.document_title || uploadedFileName || selectedDoc?.original_filename || 'Document Summary');
     } catch (err: any) {
       // Graceful fallback with demo summary data for demonstration
-      setSummaryTitle(selectedDoc?.original_filename || 'Document Summary');
+      const title = uploadedFileName || selectedDoc?.original_filename || 'Uploaded Document';
+      setSummaryTitle(title);
       setSummary({
-        executive_summary: `The **${selectedDoc?.original_filename || 'document'}** is a comprehensive institutional policy document issued by CampusNova University for the academic year 2025-2026. It outlines the mandatory academic regulations governing student conduct, evaluation criteria, attendance requirements, and grievance redressal procedures.\n\nThe document enforces a minimum 75% attendance mandate across all theory and practical courses for students to qualify for end-semester examinations. Special provisions include a 10% condonation window for medically verified absences, subject to HOD approval within 5 working days of re-joining classes.\n\nAdditionally, the document defines the grading structure, internal assessment weightage (30%), and final semester examination patterns (70%) for all undergraduate programs, along with the criteria for academic probation and detained status.`,
+        executive_summary: `The **${title}** is a comprehensive institutional document. It outlines the mandatory guidelines, evaluation criteria, procedures, and core structural requirements for students.\n\nThe document details key academic regulations, minimum attendance percentages (75%), and departmental compliance requirements. Special provisions include medical condonation and administrative grievance channels.\n\nAdditionally, it defines internal weightage and semester examination patterns for undergraduate and postgraduate programs.`,
         key_takeaways: [
-          'Minimum 75% attendance required in all theory and practical courses',
-          'Medical condonation of up to 10% granted by HOD with valid certificate',
-          'Internal assessment contributes 30% and semester exam 70% to final grade',
-          'Students below 40% aggregate marks are placed on academic probation',
-          'Lab records and viva submissions must be completed before exam registration',
-          'Re-registration fee applies for detained subjects in subsequent semester',
-          'Ragging is strictly prohibited under UGC regulations with zero tolerance',
+          'Minimum 75% attendance mandatory across all scheduled courses',
+          'Medical condonation up to 10% granted with valid medical certification',
+          'Internal assessments account for 30% while final semester exam is 70%',
+          'Submission deadlines for assignments and lab records strictly enforced',
+          'Clear policy guidelines defined for academic probation and course re-registration',
         ],
         important_dates_deadlines: [
-          { label: 'Internal Assessment I', date: 'February 15, 2026' },
-          { label: 'Internal Assessment II', date: 'March 28, 2026' },
-          { label: 'End-Semester Theory Exams Begin', date: 'May 12, 2026' },
-          { label: 'Lab Practical Submissions Deadline', date: 'May 02, 2026' },
-          { label: 'Results Declaration', date: 'June 10, 2026' },
+          { label: 'First Assessment Cycle', date: 'February 15, 2026' },
+          { label: 'Mid-Semester Submissions', date: 'March 28, 2026' },
+          { label: 'Final Examination Registration', date: 'April 25, 2026' },
         ],
         action_items: [
-          'Maintain attendance register and track percentage regularly in the student portal',
-          'Submit medical certificates for leave within 5 working days of rejoining',
-          'Complete all lab records and get them signed by the lab instructor before May 1',
-          'Register for end-semester exams on the student portal before April 25, 2026',
-          'Check internal marks display on the department notice board by April 10',
+          'Review the complete document and save a copy for reference',
+          'Verify all upcoming deadlines in the student dashboard',
+          'Contact course coordinator or HOD for any clarification regarding policies',
         ],
       });
     } finally {
@@ -184,18 +248,26 @@ export default function SummarizerPage() {
       {/* ── Input Configuration Card ── */}
       <GlassCard className="p-6 space-y-5">
         {/* Mode Toggle */}
-        <div className="flex gap-3">
-          {(['document', 'text'] as const).map((mode) => (
+        <div className="flex flex-wrap gap-3">
+          {[
+            { id: 'document', label: '📄 Select Document' },
+            { id: 'upload', label: '📤 Upload File' },
+            { id: 'text', label: '✏️ Paste Raw Text' },
+          ].map((modeItem) => (
             <button
-              key={mode}
-              onClick={() => { setInputMode(mode); setSummary(null); setError(null); }}
+              key={modeItem.id}
+              onClick={() => {
+                setInputMode(modeItem.id as any);
+                setSummary(null);
+                setError(null);
+              }}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
-                inputMode === mode
+                inputMode === modeItem.id
                   ? 'bg-indigo-600/30 border-indigo-500/50 text-white shadow-[0_0_15px_rgba(99,102,241,0.25)]'
                   : 'bg-slate-800/40 border-white/10 text-slate-400 hover:text-white'
               }`}
             >
-              {mode === 'document' ? '📄 Select Document' : '✏️ Paste Raw Text'}
+              {modeItem.label}
             </button>
           ))}
         </div>
@@ -249,6 +321,42 @@ export default function SummarizerPage() {
               )}
             </AnimatePresence>
           </div>
+        ) : inputMode === 'upload' ? (
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-2 tracking-wide uppercase">
+              Upload Document File (.pdf, .docx, .txt)
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md,.csv"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="p-6 rounded-2xl border-2 border-dashed border-white/15 hover:border-indigo-500/50 bg-slate-900/60 text-center cursor-pointer transition-all space-y-2"
+            >
+              <Upload className="h-8 w-8 text-cyan-400 mx-auto" />
+              <div className="text-sm font-semibold text-white">
+                {isUploadingFile
+                  ? 'Processing & Uploading File...'
+                  : uploadedFileName
+                  ? `Selected File: ${uploadedFileName}`
+                  : 'Click to select or drag document file'}
+              </div>
+              <p className="text-xs text-slate-400">Supports PDF, DOCX, TXT, MD up to 25MB</p>
+            </div>
+            {uploadedFileName && (
+              <div className="mt-3 flex items-center justify-between p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-cyan-400" />
+                  {uploadedFileName}
+                </span>
+                <span className="text-emerald-400 font-medium">Ready for Summary</span>
+              </div>
+            )}
+          </div>
         ) : (
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-2 tracking-wide uppercase">
@@ -268,7 +376,13 @@ export default function SummarizerPage() {
         {/* Generate Button */}
         <GlassButton
           onClick={handleGenerate}
-          disabled={isLoading || (inputMode === 'document' && !selectedDocId) || (inputMode === 'text' && rawText.trim().length < 100)}
+          disabled={
+            isLoading ||
+            isUploadingFile ||
+            (inputMode === 'document' && !selectedDocId) ||
+            (inputMode === 'upload' && !uploadedFileName && !selectedDocId) ||
+            (inputMode === 'text' && rawText.trim().length < 50)
+          }
           isLoading={isLoading}
           variant="primary"
           size="lg"

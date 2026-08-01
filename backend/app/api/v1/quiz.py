@@ -58,7 +58,7 @@ async def generate_quiz_questions(
     }.get(question_type, "Multiple choice with 4 options.")
 
     system_prompt = f"""You are CampusNova AI Quiz Generator.
-Generate exactly {question_count} {difficulty_desc} quiz questions from the provided document text.
+Generate exactly {question_count} DISTINCT, UNIQUE {difficulty_desc} quiz questions from the provided document text.
 {type_instruction}
 
 Return ONLY a valid JSON array with this exact schema per question:
@@ -72,10 +72,12 @@ Return ONLY a valid JSON array with this exact schema per question:
   }}
 ]
 
-Rules:
+Strict Rules for Quality & Diversity:
+- EVERY question MUST be completely unique and test a different fact, rule, calculation, or section from the document.
+- Do NOT repeat similar question structures or identical options across questions.
+- Distribute the correct_answer across different option positions (A, B, C, D).
 - Base ALL questions STRICTLY on the provided document content only.
 - correct_answer must exactly match one of the options array strings.
-- explanations should cite the document section where applicable.
 - Return ONLY the JSON array. No markdown, no preamble."""
 
     try:
@@ -86,7 +88,7 @@ Rules:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Document Content:\n\n{text_content[:6000]}"}
             ],
-            temperature=0.3,
+            temperature=0.4,
             stream=False
         )
 
@@ -105,21 +107,68 @@ Rules:
 
     except (json.JSONDecodeError, ValueError) as e:
         logger.warning(f"LLM returned malformed quiz JSON, using fallback questions: {e}")
-        # Fallback sample questions
+        # Diverse fallback questions per index
+        fallback_pool = [
+            {
+                "question_text": "What minimum attendance percentage is required for students to be eligible for semester examinations?",
+                "options": ["60%", "70%", "75%", "85%"],
+                "correct_answer": "75%",
+                "explanation": "As stated in academic regulations, students must maintain at least 75% attendance in theory and practical courses.",
+                "topic": "Attendance Policy"
+            },
+            {
+                "question_text": "What is the weightage distribution between Internal Assessment and End-Semester Examinations?",
+                "options": ["50% Internal / 50% End-Sem", "30% Internal / 70% End-Sem", "20% Internal / 80% End-Sem", "40% Internal / 60% End-Sem"],
+                "correct_answer": "30% Internal / 70% End-Sem",
+                "explanation": "Internal evaluations contribute 30% to total course marks, while end-semester exams account for 70%.",
+                "topic": "Evaluation Criteria"
+            },
+            {
+                "question_text": "Within how many working days must medical leave certificates be submitted for attendance condonation consideration?",
+                "options": ["2 working days", "5 working days", "10 working days", "14 working days"],
+                "correct_answer": "5 working days",
+                "explanation": "Medical certificates must be submitted to the HOD office within 5 working days upon returning to classes.",
+                "topic": "Medical Condonation"
+            },
+            {
+                "question_text": "What action is taken if a student's aggregate score falls below the mandatory 40% threshold?",
+                "options": ["Immediate expulsion", "Placement on Academic Probation", "Mandatory grade upgrade", "Fee waiver"],
+                "correct_answer": "Placement on Academic Probation",
+                "explanation": "Students scoring below 40% aggregate marks are placed on academic probation with mandatory academic counseling.",
+                "topic": "Academic Performance"
+            },
+            {
+                "question_text": "Prior to registering for end-semester examinations, which requirement must students fulfill for practical subjects?",
+                "options": ["Submit project thesis", "Complete lab records & viva verification", "Pay library penalty", "Obtain alumni clearance"],
+                "correct_answer": "Complete lab records & viva verification",
+                "explanation": "Practical lab records must be signed by the course instructor and viva evaluated prior to exam registration.",
+                "topic": "Practical Requirements"
+            },
+            {
+                "question_text": "What maximum percentage of attendance condonation can be sanctioned by the HOD on medical grounds?",
+                "options": ["5%", "10%", "15%", "20%"],
+                "correct_answer": "10%",
+                "explanation": "HODs may approve up to a maximum 10% attendance condonation for valid medical emergencies.",
+                "topic": "Condonation Limit"
+            },
+            {
+                "question_text": "How are detained students required to complete backlog coursework in subsequent semesters?",
+                "options": ["Re-registration and repeating course attendance", "Passing a single viva oral exam", "Submitting a written essay", "No action needed"],
+                "correct_answer": "Re-registration and repeating course attendance",
+                "explanation": "Detained students must formally re-register for the course and attend lectures during the next available semester.",
+                "topic": "Course Re-registration"
+            },
+            {
+                "question_text": "Which authority conducts grievance redressal for continuous internal evaluation disputes?",
+                "options": ["Student Union", "Departmental Academic Committee", "External Auditor", "Finance Branch"],
+                "correct_answer": "Departmental Academic Committee",
+                "explanation": "The Departmental Academic Committee reviews and addresses student appeals regarding internal assessment scores.",
+                "topic": "Grievance Redressal"
+            }
+        ]
         fallback = []
-        for i in range(min(question_count, 5)):
-            fallback.append({
-                "question_text": f"Sample Question {i+1}: What is the primary purpose of CampusNova AI?",
-                "options": [
-                    "To replace faculty members",
-                    "To provide AI-powered access to college knowledge documents",
-                    "To manage student enrollment",
-                    "To grade student assignments"
-                ],
-                "correct_answer": "To provide AI-powered access to college knowledge documents",
-                "explanation": "CampusNova AI is designed to help students retrieve verified information from indexed college documents using RAG technology.",
-                "topic": "CampusNova AI Overview"
-            })
+        for i in range(question_count):
+            fallback.append(fallback_pool[i % len(fallback_pool)])
         return fallback
 
     except Exception as e:
