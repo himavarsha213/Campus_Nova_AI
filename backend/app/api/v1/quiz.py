@@ -73,10 +73,11 @@ Return ONLY a valid JSON array with this exact schema per question:
 ]
 
 Strict Rules for Quality & Diversity:
-- EVERY question MUST be completely unique and test a different fact, rule, calculation, or section from the document.
+- Ignore any garbled text, corrupt OCR artifacts, random font glyph mappings, or nonsense character strings (e.g. random strings of single letters, numbers, or unreadable codes).
+- NEVER construct fill-in-the-blank or completion questions using garbled or unreadable text snippets.
+- EVERY question MUST be well-formed, grammatically clean, and test meaningful concepts, facts, definitions, or principles from valid text sections of the document.
 - Do NOT repeat similar question structures or identical options across questions.
 - Distribute the correct_answer across different option positions (A, B, C, D).
-- Base ALL questions STRICTLY on the provided document content only.
 - correct_answer must exactly match one of the options array strings.
 - Return ONLY the JSON array. No markdown, no preamble."""
 

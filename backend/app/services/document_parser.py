@@ -5,16 +5,36 @@ import docx
 import pandas as pd
 from typing import List, Dict, Any
 
+def is_garbled_line(line: str) -> bool:
+    """
+    Detects if a line is likely garbled OCR / font glyph extraction noise
+    (e.g., 'liorx 1 DY C Fe 9 j xz 3 8 O C7 r Z r Z...').
+    """
+    tokens = line.strip().split()
+    if not tokens or len(tokens) < 4:
+        return False
+    # If majority of words in a line are single characters or numbers, it's garbled font noise
+    single_char_count = sum(1 for t in tokens if len(t) <= 1)
+    if single_char_count / len(tokens) > 0.45 and len(tokens) > 6:
+        return True
+    return False
+
 def normalize_text(text: str) -> str:
     """
     Strips boilerplate whitespace, normalizes special characters,
-    removes broken formatting, and maintains paragraph boundaries.
+    filters garbled PDF font noise, and maintains paragraph boundaries.
     """
     # Replace multiple newlines with single newline
     text = re.sub(r'[\r\n]+', '\n', text)
     # Replace multiple spaces/tabs with single space
     text = re.sub(r'[ \t]+', ' ', text)
-    return text.strip()
+    
+    cleaned_lines = []
+    for line in text.split('\n'):
+        if not is_garbled_line(line):
+            cleaned_lines.append(line)
+            
+    return "\n".join(cleaned_lines).strip()
 
 def parse_pdf(file_path: str) -> List[Dict[str, Any]]:
     """
