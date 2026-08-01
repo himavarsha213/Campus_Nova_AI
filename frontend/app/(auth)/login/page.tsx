@@ -33,10 +33,15 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // Non-JSON response fallback
+      }
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to login');
+        throw new Error((data && data.detail) || 'Login failed. Invalid credentials or server error.');
       }
 
       login(data.access_token, data.user);
