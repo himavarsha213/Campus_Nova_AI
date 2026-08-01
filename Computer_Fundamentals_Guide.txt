@@ -1,0 +1,13 @@
+# Computer Fundamentals & Operating Systems
+
+## 1. Introduction to Computer Architecture
+A computer system consists of hardware components and software applications. The Central Processing Unit (CPU) acts as the brain of the computer, executing instructions and managing calculations. Memory units include RAM (Random Access Memory), which stores temporary operational data, and ROM (Read-Only Memory), which contains boot instructions.
+
+## 2. Operating System Functions
+The Operating System (OS) manages hardware resources, file systems, and user processes. Popular operating systems include Linux, Windows, and macOS. The OS kernel communicates directly with device hardware through device drivers and handles memory management and CPU scheduling.
+
+## 3. Data Storage and Memory Management
+Data in a computer is represented in binary format using 0s and 1s. A byte consists of 8 bits. Storage devices are categorized into primary memory (RAM, Cache) and secondary storage (Solid State Drives, Hard Disk Drives). Cache memory is high-speed memory located near the CPU to accelerate data access speeds.
+
+## 4. Computer Networking Basics
+Computer networks connect devices using protocol suites such as TCP/IP (Transmission Control Protocol / Internet Protocol). IP addresses uniquely identify devices on a network. Key network components include routers, switches, and firewalls that manage data packet routing and network security.
