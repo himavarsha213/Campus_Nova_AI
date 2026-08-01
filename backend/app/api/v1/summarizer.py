@@ -101,42 +101,43 @@ async def generate_summary(
     document_title = "Custom Text"
 
     # 1. Build the text content to summarize
-    if request.document_id:
-        try:
-            # Fetch document metadata
-            doc_response = supabase_admin.table("documents").select("*").eq("id", document_id).execute()
+    if request.raw_text and len(request.raw_text.strip()) > 10:
+        text_content = request.raw_text.strip()
+        if request.document_id:
+            doc_response = supabase_admin.table("documents").select("original_filename").eq("id", request.document_id).execute()
             if doc_response.data:
-                document_title = doc_response.data[0].get("original_filename", "Unknown Document")
-            else:
-                document_title = "Uploaded Document"
+                document_title = doc_response.data[0].get("original_filename", "Uploaded Document")
 
-            # Fetch document text chunks from Supabase
-            chunks_response = supabase_admin.table("document_chunks") \
-                .select("chunk_text, page_number, chunk_index") \
-                .eq("document_id", document_id) \
-                .order("chunk_index", desc=False) \
-                .limit(20) \
-                .execute()
+    elif request.document_id:
+        # Fetch document metadata
+        doc_response = supabase_admin.table("documents").select("*").eq("id", document_id).execute()
+        if doc_response.data:
+            document_title = doc_response.data[0].get("original_filename", "Unknown Document")
+        else:
+            document_title = "Uploaded Document"
 
-            if chunks_response.data:
-                text_content = "\n\n".join(
-                    f"[Page {c.get('page_number', '?')}] {c.get('chunk_text', '')}"
-                    for c in chunks_response.data
-                )
-            elif request.raw_text:
-                text_content = request.raw_text
-            else:
-                text_content = f"Document Title: {document_title}. Academic regulations, policy rules, exam schedule, syllabus, and administrative guidelines."
-        except Exception:
-            text_content = request.raw_text or "Academic regulations and administrative guidelines."
+        # Fetch document text chunks from Supabase
+        chunks_response = supabase_admin.table("document_chunks") \
+            .select("chunk_text, page_number, chunk_index") \
+            .eq("document_id", document_id) \
+            .order("chunk_index", desc=False) \
+            .limit(20) \
+            .execute()
 
-    elif request.raw_text:
-        text_content = request.raw_text
-        document_id = None
+        if chunks_response.data:
+            text_content = "\n\n".join(
+                f"[Page {c.get('page_number', '?')}] {c.get('chunk_text', '')}"
+                for c in chunks_response.data
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Document text is still being processed or no text could be extracted. Please wait a moment or paste raw text."
+            )
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provide either document_id or raw_text."
+            detail="Provide either document_id or valid raw_text."
         )
 
     # 2. Generate structured summary via LLM

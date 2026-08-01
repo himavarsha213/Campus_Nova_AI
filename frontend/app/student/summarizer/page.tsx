@@ -147,14 +147,25 @@ export default function SummarizerPage() {
     setSummary(null);
     setIsLoading(true);
 
-    const payload =
-      inputMode === 'document'
-        ? { document_id: selectedDocId }
-        : inputMode === 'upload' && rawText.length > 50
-        ? { raw_text: rawText }
-        : inputMode === 'upload' && selectedDocId
-        ? { document_id: selectedDocId }
-        : { raw_text: rawText };
+    const payload: { document_id?: string; raw_text?: string } = {};
+    if (inputMode === 'upload') {
+      if (rawText && rawText.trim().length > 10) {
+        payload.raw_text = rawText;
+      }
+      if (selectedDocId) {
+        payload.document_id = selectedDocId;
+      }
+    } else if (inputMode === 'document') {
+      payload.document_id = selectedDocId;
+    } else {
+      payload.raw_text = rawText;
+    }
+
+    if (!payload.document_id && (!payload.raw_text || payload.raw_text.trim().length < 10)) {
+      setError('Please select a document or provide valid text/file to summarize.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/v1/summary', {
@@ -175,29 +186,8 @@ export default function SummarizerPage() {
       setSummary(data.summary);
       setSummaryTitle(data.document_title || uploadedFileName || selectedDoc?.original_filename || 'Document Summary');
     } catch (err: any) {
-      // Graceful fallback with demo summary data for demonstration
-      const title = uploadedFileName || selectedDoc?.original_filename || 'Uploaded Document';
-      setSummaryTitle(title);
-      setSummary({
-        executive_summary: `The **${title}** is a comprehensive institutional document. It outlines the mandatory guidelines, evaluation criteria, procedures, and core structural requirements for students.\n\nThe document details key academic regulations, minimum attendance percentages (75%), and departmental compliance requirements. Special provisions include medical condonation and administrative grievance channels.\n\nAdditionally, it defines internal weightage and semester examination patterns for undergraduate and postgraduate programs.`,
-        key_takeaways: [
-          'Minimum 75% attendance mandatory across all scheduled courses',
-          'Medical condonation up to 10% granted with valid medical certification',
-          'Internal assessments account for 30% while final semester exam is 70%',
-          'Submission deadlines for assignments and lab records strictly enforced',
-          'Clear policy guidelines defined for academic probation and course re-registration',
-        ],
-        important_dates_deadlines: [
-          { label: 'First Assessment Cycle', date: 'February 15, 2026' },
-          { label: 'Mid-Semester Submissions', date: 'March 28, 2026' },
-          { label: 'Final Examination Registration', date: 'April 25, 2026' },
-        ],
-        action_items: [
-          'Review the complete document and save a copy for reference',
-          'Verify all upcoming deadlines in the student dashboard',
-          'Contact course coordinator or HOD for any clarification regarding policies',
-        ],
-      });
+      console.error('Failed to generate summary:', err);
+      setError(err.message || 'AI summary generation failed. Please ensure the document contains readable text.');
     } finally {
       setIsLoading(false);
     }
