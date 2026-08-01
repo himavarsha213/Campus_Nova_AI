@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
 class DepartmentNested(BaseModel):
@@ -13,9 +13,9 @@ class DocumentOut(BaseModel):
     department_id: Optional[str] = None
     category: str
     uploaded_by: Optional[str] = None
-    version: int
-    status: str
-    uploaded_at: datetime
+    version: int = 1
+    status: str = "active"
+    uploaded_at: Optional[Any] = None
 
 class DocumentListOut(BaseModel):
     id: str
@@ -25,7 +25,7 @@ class DocumentListOut(BaseModel):
     department_id: Optional[str] = None
     category: str
     uploaded_by: Optional[str] = None
-    version: int
-    status: str
-    uploaded_at: datetime
+    version: int = 1
+    status: str = "active"
+    uploaded_at: Optional[Any] = None
     departments: Optional[DepartmentNested] = None

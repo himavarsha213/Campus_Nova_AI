@@ -136,7 +136,7 @@ async def generate_summary(
     Generate a structured AI summary for a document_id (fetches chunks from Supabase)
     or for raw_text directly.
     """
-    user_id = str(current_user["id"])
+    user_id = str(current_user.get("id", "demo-user")) if isinstance(current_user, dict) else "demo-user"
     document_id = request.document_id
     document_title = "Custom Text"
 
