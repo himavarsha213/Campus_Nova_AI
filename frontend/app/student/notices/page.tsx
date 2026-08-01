@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import GlassCard from '@/components/ui/GlassCard';
 import GlassBadge from '@/components/ui/GlassBadge';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { API_BASE_URL as API } from '@/lib/api';
 
 interface Notice {
   id: string;

@@ -20,7 +20,7 @@ const DEFAULT_DEPARTMENTS = [
   { id: 'a0000000-0000-0000-0000-000000000007', department_name: 'Artificial Intelligence & Data Science', department_code: 'AI-DS' },
 ];
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+import { API_BASE_URL as API } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
