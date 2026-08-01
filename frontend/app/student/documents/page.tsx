@@ -338,14 +338,6 @@ export default function DocumentSearchPage() {
                       <FileQuestion className="h-3.5 w-3.5" />
                       Quiz
                     </button>
-                    <button
-                      onClick={() => router.push('/student/summarizer')}
-                      className="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-300 hover:text-white transition-all flex items-center gap-1 font-medium text-[11px]"
-                      title="Summarize document"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Summary
-                    </button>
                   </div>
                 </div>
               </GlassCard>
