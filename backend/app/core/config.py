@@ -41,7 +41,9 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://campusnova.ai"
+        "https://campusnova.ai",
+        "https://campus-nova-mbrgy019o-himavarsha.vercel.app",
+        "*"
     ]
 
     model_config = SettingsConfigDict(
