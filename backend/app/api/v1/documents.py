@@ -10,11 +10,13 @@ from app.database.document_repo import document_repo
 from app.database.vector_store import vector_store
 from app.services.rag_ingestion import process_and_ingest_document
 
+import tempfile
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
-TEMP_DIR = "temp_uploads"
+TEMP_DIR = os.path.join(tempfile.gettempdir(), "temp_uploads")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 def bg_ingest_task(document_id: str, file_path: str, metadata: dict):
@@ -155,6 +157,15 @@ async def upload_document(
         "status": "active",
         "version": 1
     }
+
+    metadata = {
+        "title": title,
+        "category": category,
+        "department_id": department_id,
+        "file_name": file.filename
+    }
+
+    background_tasks.add_task(bg_ingest_task, doc_uuid, temp_file_path, metadata)
 
     try:
         new_doc = document_repo.create_document(doc_data)

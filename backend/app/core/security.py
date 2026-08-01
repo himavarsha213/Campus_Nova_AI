@@ -1,6 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Optional, List, Union, Any
 from jose import jwt, JWTError
+import bcrypt
+if not hasattr(bcrypt, "__about__"):
+    try:
+        bcrypt.__about__ = type("About", (), {"__version__": getattr(bcrypt, "__version__", "4.0.0")})()
+    except Exception:
+        pass
+
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
