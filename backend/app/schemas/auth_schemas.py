@@ -1,9 +1,9 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class UserRegister(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=255)
-    email: EmailStr
+    email: str = Field(..., min_length=3, max_length=255)
     password: str = Field(..., min_length=6)
     role: str = Field(default="student", pattern="^(student|faculty|admin)$")
     department_id: Optional[str] = None
@@ -11,7 +11,7 @@ class UserRegister(BaseModel):
     phone: Optional[str] = None
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class UserOut(BaseModel):
@@ -31,4 +31,4 @@ class Token(BaseModel):
     user: UserOut
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: str
